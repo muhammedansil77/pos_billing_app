@@ -1,0 +1,166 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/product_provider.dart';
+import '../../providers/localization_provider.dart';
+import '../../utils/snackbar_utils.dart';
+import 'add_edit_product_screen.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+
+class ProductListScreen extends StatefulWidget {
+  const ProductListScreen({super.key});
+
+  @override
+  State<ProductListScreen> createState() => _ProductListScreenState();
+}
+
+class _ProductListScreenState extends State<ProductListScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProductProvider>().fetchProducts();
+    });
+  }
+
+  Future<void> _printBarcode(dynamic product) async {
+    final doc = pw.Document();
+    final sellingPrice = product['sellingPrice'] ?? product['price'];
+    
+    doc.addPage(
+      pw.Page(
+        pageFormat: const PdfPageFormat(220, 150, marginAll: 10),
+        build: (pw.Context context) {
+          return pw.Center(
+            child: pw.Column(
+              mainAxisAlignment: pw.MainAxisAlignment.center,
+              children: [
+                pw.Text(product['name'].toString(), style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14)),
+                pw.SizedBox(height: 5),
+                pw.BarcodeWidget(
+                  barcode: pw.Barcode.code128(),
+                  data: product['barcode'].toString(),
+                  width: 160,
+                  height: 60,
+                ),
+                pw.SizedBox(height: 5),
+                pw.Text('Price: Rs $sellingPrice'),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => doc.save(),
+      name: '${product['name']}_barcode',
+    );
+  }
+
+  Future<void> _deleteProduct(BuildContext context, String id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Product?'),
+        content: const Text('Are you sure you want to remove this product?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true), 
+            child: const Text('DELETE', style: TextStyle(color: Colors.red))
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await context.read<ProductProvider>().deleteProduct(id);
+      } catch (e) {
+        if (context.mounted) {
+          SnackbarUtils.showError(context, e.toString());
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final localizationProvider = Provider.of<LocalizationProvider>(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(localizationProvider.translate('products')),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh), 
+            onPressed: () => context.read<ProductProvider>().fetchProducts()
+          )
+        ],
+      ),
+      body: Consumer<ProductProvider>(
+        builder: (context, productProvider, child) {
+          if (productProvider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (productProvider.products.isEmpty) {
+            return const Center(child: Text('No products available. Add one!'));
+          }
+
+          return ListView.builder(
+            itemCount: productProvider.products.length,
+            itemBuilder: (context, index) {
+              final product = productProvider.products[index];
+              final sellingPrice = product['sellingPrice'] ?? product['price'];
+              final wholesalePrice = product['wholesalePrice'] ?? 'N/A';
+              final unit = product['unit'] ?? 'kg';
+
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: ListTile(
+                  leading: CircleAvatar(child: Text(product['name'][0].toUpperCase())),
+                  title: Text(product['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text(
+                    'Sell: ₹${sellingPrice} | Wholesale: ₹${wholesalePrice}\n'
+                    'Stock: ${product['quantity']} ${unit} | Barcode: ${product['barcode']}',
+                  ),
+                  isThreeLine: true,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit, color: Colors.blue),
+                        onPressed: () async {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => AddEditProductScreen(product: product)),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.print, color: Colors.green),
+                        onPressed: () => _printBarcode(product),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () => _deleteProduct(context, product['_id']),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'addProduct',
+        onPressed: () => Navigator.pushNamed(context, '/add-product'),
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
