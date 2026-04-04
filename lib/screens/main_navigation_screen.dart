@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'billing/sales_history_screen.dart';
 import 'customers/customer_list_screen.dart';
-import 'profile/profile_screen.dart';
+import 'products/product_list_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -18,7 +18,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     const DashboardScreen(),
     const SalesHistoryScreen(),
     const CustomerListScreen(),
-    const ProfileScreen(),
+    const ProductListScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -66,7 +66,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             
             // Right Side Items
             _buildNavItem(2, Icons.people_outline, Icons.people, 'Customers', primaryGreen, unselectedGrey),
-            _buildNavItem(3, Icons.person_outline, Icons.person, 'Profile', primaryGreen, unselectedGrey),
+            _buildNavItem(3, Icons.inventory_2_outlined, Icons.inventory_2, 'Products', primaryGreen, unselectedGrey),
           ],
         ),
       ),

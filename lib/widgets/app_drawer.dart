@@ -59,6 +59,18 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           ListTile(
+            leading: const Icon(Icons.category, color: Colors.indigo),
+            title: const Text('Categories'), // I'll use hardcoded for now, but will update localization later if needed
+            selected: currentRoute == '/categories',
+            onTap: () {
+              if (currentRoute != '/categories') {
+                Navigator.pushReplacementNamed(context, '/categories');
+              } else {
+                Navigator.pop(context);
+              }
+            },
+          ),
+          ListTile(
             leading: const Icon(Icons.people, color: Colors.blue),
             title: Text(localizationProvider.translate('customers')),
             selected: currentRoute == '/customers',

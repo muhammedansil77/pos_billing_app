@@ -81,12 +81,17 @@ import 'screens/customers/customer_list_screen.dart';
 import 'screens/products/product_list_screen.dart';
 import 'screens/products/add_edit_product_screen.dart';
 import 'screens/billing/sales_history_screen.dart';
+import 'screens/inventory/inventory_screen.dart';
 import 'providers/localization_provider.dart';
 import 'providers/product_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/billing_provider.dart';
 import 'providers/sales_provider.dart';
 import 'providers/customer_provider.dart';
+import 'providers/category_provider.dart';
+import 'screens/products/category_list_screen.dart';
+import 'screens/profile/profile_screen.dart';
+
 
 void main() {
   runApp(
@@ -99,6 +104,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => BillingProvider()),
         ChangeNotifierProvider(create: (_) => SalesProvider()),
         ChangeNotifierProvider(create: (_) => CustomerProvider()),
+        ChangeNotifierProvider(create: (_) => CategoryProvider()),
       ],
       child: const POSBillingApp(),
     ),
@@ -135,6 +141,9 @@ class POSBillingApp extends StatelessWidget {
         '/credit': (context) => const CreditCustomersScreen(),
         '/add-product': (context) => const AddEditProductScreen(),
         '/sales': (context) => const SalesHistoryScreen(),
+        '/inventory': (context) => const InventoryScreen(),
+        '/categories': (context) => const CategoryListScreen(),
+        '/profile': (context) => const ProfileScreen(),
       },
       debugShowCheckedModeBanner: false,
     );

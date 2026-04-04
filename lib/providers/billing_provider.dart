@@ -49,7 +49,7 @@ class BillingProvider with ChangeNotifier {
 
   void addItem(Map<String, dynamic> product, double quantity) {
     final availableStock = (product['quantity'] ?? 0).toDouble();
-    final unit = product['unit'] ?? 'kg';
+    final unit = product['unit'] ?? 'Units';
     
     final existingIndex = _billingItems.indexWhere((item) => item['_id'] == product['_id']);
     double currentInBill = 0;
@@ -76,7 +76,7 @@ class BillingProvider with ChangeNotifier {
     final item = _billingItems[index];
     final availableStock = (item['quantity'] ?? 0).toDouble();
     final currentInBill = ( (item['billQuantity'] ?? 0) as num).toDouble();
-    final unit = item['unit'] ?? 'kg';
+    final unit = item['unit'] ?? 'Units';
 
     if (delta > 0 && currentInBill + delta > availableStock) {
       throw 'STOCK_LIMIT|${availableStock.toStringAsFixed(unit == 'Units' ? 0 : 3)}|$unit';
@@ -165,7 +165,7 @@ class BillingProvider with ChangeNotifier {
         // For new additions, they'll check against current available stock. We set an arbitrarily large quantity for loaded items just so the UI doesn't block them. Or we should fetch actual product info.
         // For simplicity, allowing current quantity + 999
         'quantity': ((item['quantity'] ?? 1).toDouble()) + 999.0, 
-        'unit': 'Units', // Generic unit if unknown
+        'unit': item['unit'] ?? 'Units', 
       });
     }
     notifyListeners();

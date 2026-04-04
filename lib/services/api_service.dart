@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const String baseUrl = "http://192.168.125.198:5000";
+const String baseUrl = "http://172.20.10.2:5000";
 
 class ApiService {
   final Dio _dio = Dio(
@@ -254,4 +254,55 @@ class ApiService {
       throw Exception(e.response?.data['message'] ?? 'Failed to fetch payment history');
     }
   }
+  Future<List<dynamic>> getCategories() async {
+    try {
+      final token = await _getToken();
+      final response = await _dio.get(
+        'categories',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Failed to get categories');
+    }
+  }
+
+  Future<void> createCategory(Map<String, dynamic> data) async {
+    try {
+      final token = await _getToken();
+      await _dio.post(
+        'categories',
+        data: data,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Failed to create category');
+    }
+  }
+
+  Future<void> updateCategory(String id, Map<String, dynamic> data) async {
+    try {
+      final token = await _getToken();
+      await _dio.put(
+        'categories/$id',
+        data: data,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Failed to update category');
+    }
+  }
+
+  Future<void> deleteCategory(String id) async {
+    try {
+      final token = await _getToken();
+      await _dio.delete(
+        'categories/$id',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Failed to delete category');
+    }
+  }
 }
+

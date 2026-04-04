@@ -6,6 +6,7 @@ import '../../providers/billing_provider.dart';
 import '../../providers/customer_provider.dart';
 import 'barcode_scanner_screen.dart';
 import '../../utils/snackbar_utils.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 class POSScreen extends StatefulWidget {
   const POSScreen({super.key});
@@ -16,16 +17,26 @@ class POSScreen extends StatefulWidget {
 
 class _POSScreenState extends State<POSScreen> {
   final ApiService _apiService = ApiService();
-  Offset _fabPosition = const Offset(20, 80); // Default position from bottom-right
+  late MobileScannerController _scannerController;
+  bool _showCamera = true;
+  bool _isProcessingScan = false;
 
   @override
   void initState() {
     super.initState();
+    _scannerController = MobileScannerController(
+      detectionSpeed: DetectionSpeed.normal,
+      facing: CameraFacing.back,
+      autoStart: true,
+    );
   }
 
-  void _addInfo(String message) {
-    SnackbarUtils.showInfo(context, message);
+  @override
+  void dispose() {
+    _scannerController.dispose();
+    super.dispose();
   }
+
 
   void _addError(String message) {
     if (message.startsWith('STOCK_LIMIT|')) {
@@ -46,14 +57,34 @@ class _POSScreenState extends State<POSScreen> {
       context,
       MaterialPageRoute(builder: (context) => const BarcodeScannerScreen()),
     );
+    if (barcode != null && barcode.isNotEmpty) {
+       _processScannedBarcode(barcode);
+    }
+  }
 
-    if (barcode == null || barcode.isEmpty) return;
+  void _onBarcodeDetected(BarcodeCapture capture) async {
+    if (_isProcessingScan) return;
+    
+    final List<Barcode> barcodes = capture.barcodes;
+    if (barcodes.isNotEmpty) {
+      String? barcode = barcodes.first.displayValue;
+      if (barcode != null && barcode.isNotEmpty) {
+        setState(() => _isProcessingScan = true);
+        await _processScannedBarcode(barcode);
+        // Add a cooldown to prevent rapid multi-scans of same item
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) setState(() => _isProcessingScan = false);
+        });
+      }
+    }
+  }
 
+  Future<void> _processScannedBarcode(String barcode) async {
     try {
       final product = await _apiService.getProductByBarcode(barcode);
       
       double quantity = 1.0;
-      if (product['unit'] == 'kg' || product['unit'] == 'Grams' || product['unit'] == 'Units') {
+      if (product['unit'] == 'kg' || product['unit'] == 'Grams') {
         final double? weight = await _showWeightDialog(product['name'], product['unit']);
         if (weight == null || weight <= 0) return;
         quantity = weight;
@@ -62,6 +93,7 @@ class _POSScreenState extends State<POSScreen> {
       if (mounted) {
         try {
           context.read<BillingProvider>().addItem(product, quantity);
+          _addSuccess('Added: ${product['name']}');
         } catch (e) {
             _addError(e.toString());
         }
@@ -73,8 +105,15 @@ class _POSScreenState extends State<POSScreen> {
 
   Future<double?> _showWeightDialog(String productName, String productUnit) async {
     final TextEditingController weightController = TextEditingController();
-    String unit = 'kg';
-    
+    final FocusNode focusNode = FocusNode();
+    String unit = (productUnit == 'kg' || productUnit == 'Grams') ? productUnit : 'kg';
+    bool isUnitBased = productUnit == 'Units';
+
+    // Requesting focus after the dialog is built to ensure keyboard pop-up
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      focusNode.requestFocus();
+    });
+
     return await showDialog<double>(
       context: context,
       barrierDismissible: false,
@@ -82,49 +121,59 @@ class _POSScreenState extends State<POSScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: Text('Enter Weight: $productName'),
+              title: Text(isUnitBased ? 'Enter Quantity: $productName' : 'Enter Weight: $productName'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: weightController,
+                    focusNode: focusNode,
                     autofocus: true,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: TextInputType.numberWithOptions(decimal: !isUnitBased),
                     decoration: InputDecoration(
-                      labelText: 'Weight',
+                      labelText: isUnitBased ? 'Quantity' : 'Weight',
                       border: const OutlineInputBorder(),
-                      suffixText: unit,
+                      suffixText: isUnitBased ? 'Units' : unit,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  ToggleButtons(
-                    borderRadius: BorderRadius.circular(8),
-                    isSelected: [unit == 'kg', unit == 'grams'],
-                    onPressed: (index) {
-                      setDialogState(() => unit = index == 0 ? 'kg' : 'grams');
-                    },
-                    children: const [
-                      Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('KG')),
-                      Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('Grams')),
-                    ],
-                  ),
+                  if (!isUnitBased) ...[
+                    const SizedBox(height: 16),
+                    ToggleButtons(
+                      borderRadius: BorderRadius.circular(8),
+                      isSelected: [unit == 'kg', unit == 'grams' || unit == 'Grams'],
+                      onPressed: (index) {
+                        setDialogState(() => unit = index == 0 ? 'kg' : 'grams');
+                      },
+                      children: const [
+                        Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('KG')),
+                        Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('Grams')),
+                      ],
+                    ),
+                  ],
                 ],
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
+                TextButton(
+                  onPressed: () {
+                    focusNode.dispose();
+                    Navigator.pop(context);
+                  }, 
+                  child: const Text('CANCEL')
+                ),
                 ElevatedButton(
                   onPressed: () {
                     final String valStr = weightController.text;
                     if (valStr.isEmpty) return;
                     
                     double val = double.tryParse(valStr) ?? 0;
-                    if (unit == 'grams') val /= 1000;
+                    if (!isUnitBased && (unit == 'grams' || unit == 'Grams')) val /= 1000;
                     
-                    if (productUnit == 'Units' && valStr.contains('.')) {
+                    if (isUnitBased && valStr.contains('.')) {
                        final localization = Provider.of<LocalizationProvider>(context, listen: false);
                        SnackbarUtils.showError(context, localization.translate('noDecimalItems'));
                        return;
                     }
+                    focusNode.dispose();
                     Navigator.pop(context, val > 0 ? val : null);
                   },
                   child: const Text('ADD TO BILL'),
@@ -146,63 +195,115 @@ class _POSScreenState extends State<POSScreen> {
         title: Text(localizationProvider.translate('newBill')),
         actions: [
           IconButton(
+            icon: Icon(_showCamera ? Icons.videocam_off_outlined : Icons.videocam_outlined),
+            tooltip: _showCamera ? 'Hide Scanner' : 'Show Scanner',
+            onPressed: () => setState(() => _showCamera = !_showCamera),
+          ),
+          IconButton(
             icon: const Icon(Icons.qr_code_scanner),
             onPressed: _scanProduct,
-            tooltip: 'Scan Product Barcode',
-          )
+          ),
         ],
       ),
-      body: Stack(
-        children: [
-          Consumer<BillingProvider>(
-            builder: (context, billing, child) {
-              if (billing.isLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
+      body: Consumer<BillingProvider>(
+        builder: (context, billing, child) {
+          if (billing.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-              return Column(
-                children: [
-                  if (billing.paymentMode == 'Credit') _customerSelectionHeader(billing),
-                  Expanded(
-                    child: billing.billingItems.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.qr_code_scanner, size: 100, color: Colors.grey),
-                                const SizedBox(height: 16),
-                                const Text(
-                                  'No products added yet.',
-                                  style: TextStyle(fontSize: 18, color: Colors.grey, fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 24),
-                                ElevatedButton.icon(
-                                  onPressed: _scanProduct,
-                                  icon: const Icon(Icons.camera_alt),
-                                  label: const Text('TAP TO SCAN BARCODE'),
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                                    backgroundColor: Colors.deepPurple,
-                                    foregroundColor: Colors.white,
-                                  ),
-                                ),
-                              ],
+          return Column(
+            children: [
+              if (billing.paymentMode == 'Credit') _customerSelectionHeader(billing),
+              
+              if (_showCamera)
+                Container(
+                  height: 200,
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.deepPurple, width: 2),
+                    color: Colors.black,
+                  ),
+                  clipBehavior: Clip.hardEdge,
+                  child: Stack(
+                    children: [
+                      MobileScanner(
+                        controller: _scannerController,
+                        onDetect: _onBarcodeDetected,
+                        // Removed scanWindow as it might be too restrictive in some versions
+                      ),
+                      // Scanner Overlay
+                      Container(
+                        decoration: BoxDecoration(
+                          color: _isProcessingScan ? Colors.green.withAlpha(50) : Colors.transparent,
+                        ),
+                        child: Center(
+                          child: Container(
+                            width: 250,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: _isProcessingScan ? Colors.green : Colors.white70, 
+                                width: 2
+                              ),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          )
-                        : ListView.builder(
-                            itemCount: billing.billingItems.length,
-                            itemBuilder: (context, index) {
-                              final item = billing.billingItems[index];
-                              return ListTile(
-                                leading: const CircleAvatar(child: Icon(Icons.shopping_bag)),
-                                title: Text(item['name']),
+                            child: _isProcessingScan 
+                              ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                              : null,
+                          ),
+                        ),
+                      ),
+                      // Torch Toggle Button
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: CircleAvatar(
+                          backgroundColor: Colors.black54,
+                          child: IconButton(
+                            icon: const Icon(Icons.flashlight_on, color: Colors.white, size: 20),
+                            onPressed: () => _scannerController.toggleTorch(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              Expanded(
+                child: billing.billingItems.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.shopping_cart_outlined, size: 64, color: Colors.grey),
+                            const SizedBox(height: 16),
+                            Text(
+                              localizationProvider.translate('noItemsAlert'),
+                              style: const TextStyle(fontSize: 16, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: billing.billingItems.length,
+                        itemBuilder: (context, index) {
+                          final item = billing.billingItems[index];
+                          return Card(
+                            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(color: Colors.grey[200]!),
+                            ),
+                            child: ListTile(
+                              leading: const CircleAvatar(child: Icon(Icons.shopping_bag)),
+                              title: Text(item['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     '₹${item['sellingPrice'] ?? item['price']} x ${item['billQuantity']} ${item['unit'] ?? ''}',
-                                    style: const TextStyle(fontWeight: FontWeight.w500),
                                   ),
                                   Text(
                                     'Stock: ${item['quantity'] ?? 0} ${item['unit'] ?? ''}',
@@ -217,19 +318,8 @@ class _POSScreenState extends State<POSScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
-                                    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
-                                    onPressed: () => billing.removeItem(index),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  IconButton(
                                     icon: const Icon(Icons.remove_circle_outline, color: Colors.orange),
-                                    onPressed: () {
-                                      try {
-                                        billing.updateQuantity(index, -1);
-                                      } catch (e) {
-                                        _addInfo(e.toString());
-                                      }
-                                    },
+                                    onPressed: () => billing.updateQuantity(index, -1),
                                   ),
                                   Text(
                                     item['billQuantity'] is double 
@@ -238,67 +328,20 @@ class _POSScreenState extends State<POSScreen> {
                                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                   ),
                                   IconButton(
-                                    icon: Icon(
-                                      Icons.add_circle_outline, 
-                                      color: (item['billQuantity'] as num).toDouble() >= (item['quantity'] as num).toDouble() ? Colors.grey : Colors.blue
-                                    ),
-                                    onPressed: (item['billQuantity'] as num).toDouble() >= (item['quantity'] as num).toDouble() 
-                                      ? null 
-                                      : () {
-                                          try {
-                                            billing.updateQuantity(index, 1);
-                                          } catch (e) {
-                                            _addError(e.toString());
-                                          }
-                                        },
+                                    icon: const Icon(Icons.add_circle_outline, color: Colors.blue),
+                                    onPressed: () => billing.updateQuantity(index, 1),
                                   ),
                                 ],
                               ),
-                              );
-                            },
-                          ),
-                  ),
-                  _bottomSummary(billing),
-                ],
-              );
-            },
-          ),
-          // Draggable Scanner Button
-          Positioned(
-            right: _fabPosition.dx,
-            bottom: _fabPosition.dy,
-            child: Draggable(
-              feedback: FloatingActionButton.large(
-                heroTag: 'posScannerFeedback',
-                onPressed: null,
-                backgroundColor: Colors.deepPurple.withAlpha(150),
-                foregroundColor: Colors.white,
-                child: const Icon(Icons.qr_code_scanner, size: 45),
+                            ),
+                          );
+                        },
+                      ),
               ),
-              childWhenDragging: Container(),
-              onDragEnd: (details) {
-                setState(() {
-                  // Adjust for screen boundaries and offset
-                  double newX = MediaQuery.of(context).size.width - details.offset.dx - 80;
-                  double newY = MediaQuery.of(context).size.height - details.offset.dy - 80;
-                  
-                  // Clamp values to keep button on screen
-                  _fabPosition = Offset(
-                    newX.clamp(10, MediaQuery.of(context).size.width - 90),
-                    newY.clamp(10, MediaQuery.of(context).size.height - 150),
-                  );
-                });
-              },
-              child: FloatingActionButton.large(
-                heroTag: 'posScanner',
-                onPressed: _scanProduct,
-                backgroundColor: Colors.deepPurple,
-                foregroundColor: Colors.white,
-                child: const Icon(Icons.qr_code_scanner, size: 45),
-              ),
-            ),
-          ),
-        ],
+              _bottomSummary(billing),
+            ],
+          );
+        },
       ),
     );
   }

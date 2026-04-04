@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/localization_provider.dart';
+import '../../providers/category_provider.dart';
 import '../billing/barcode_scanner_screen.dart';
 import '../../utils/snackbar_utils.dart';
 import 'dart:math';
@@ -23,6 +24,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   final _barcodeController = TextEditingController();
   final _gstController = TextEditingController(text: '0');
   String _selectedUnit = 'kg';
+  String? _selectedCategoryId;
   bool _formIsValid = false;
   
   bool get _isEditing => widget.product != null;
@@ -38,10 +40,16 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       _barcodeController.text = widget.product!['barcode'] ?? '';
       _gstController.text = (widget.product!['gstPercentage'] ?? 0).toString();
       _selectedUnit = widget.product!['unit'] ?? 'kg';
+      _selectedCategoryId = widget.product!['category'] is Map 
+          ? widget.product!['category']['_id'] 
+          : widget.product!['category'];
     }
     
     // Initial validation check
-    WidgetsBinding.instance.addPostFrameCallback((_) => _validateForm());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _validateForm();
+      context.read<CategoryProvider>().fetchCategories();
+    });
   }
 
   void _validateForm() {
@@ -76,6 +84,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           'unit': _selectedUnit,
           'barcode': _barcodeController.text,
           'gstPercentage': double.tryParse(_gstController.text) ?? 0.0,
+          'category': _selectedCategoryId,
         };
 
         final productProvider = context.read<ProductProvider>();
@@ -103,8 +112,8 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(_isEditing ? 'Edit Product' : 'Add Product')),
-      body: Consumer<ProductProvider>(
-        builder: (context, productProvider, child) {
+      body: Consumer2<ProductProvider, CategoryProvider>(
+        builder: (context, productProvider, categoryProvider, child) {
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Form(
@@ -122,6 +131,28 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                       prefixIcon: Icon(Icons.shopping_bag_outlined),
                     ),
                     validator: (v) => (v == null || v.isEmpty) ? 'Product name is required' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: _selectedCategoryId,
+                    decoration: const InputDecoration(
+                      labelText: 'Category', 
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.category_outlined),
+                    ),
+                    items: categoryProvider.categories.map((cat) {
+                      return DropdownMenuItem<String>(
+                        value: cat['_id'],
+                        child: Text(cat['name']),
+                      );
+                    }).toList(),
+                    onChanged: (v) {
+                      setState(() {
+                        _selectedCategoryId = v;
+                      });
+                      _validateForm();
+                    },
+                    validator: (v) => (v == null) ? 'Category is required' : null,
                   ),
                   const SizedBox(height: 16),
                   Row(

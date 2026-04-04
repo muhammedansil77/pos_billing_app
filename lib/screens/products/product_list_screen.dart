@@ -117,6 +117,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
               final sellingPrice = product['sellingPrice'] ?? product['price'];
               final wholesalePrice = product['wholesalePrice'] ?? 'N/A';
               final unit = product['unit'] ?? 'kg';
+              final categoryName = product['category'] is Map 
+                  ? product['category']['name'] 
+                  : (product['category'] ?? 'Uncategorized');
 
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -124,8 +127,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
                   leading: CircleAvatar(child: Text(product['name'][0].toUpperCase())),
                   title: Text(product['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
                   subtitle: Text(
-                    'Sell: ₹${sellingPrice} | Wholesale: ₹${wholesalePrice}\n'
-                    'Stock: ${product['quantity']} ${unit} | Barcode: ${product['barcode']}',
+                    'Category: $categoryName\n'
+                    'Sell: ₹$sellingPrice | Wholesale: ₹$wholesalePrice\n'
+                    'Stock: ${product['quantity']} $unit | BC: ${product['barcode']}',
                   ),
                   isThreeLine: true,
                   trailing: Row(

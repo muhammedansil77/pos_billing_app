@@ -32,6 +32,7 @@ class LocalizationProvider with ChangeNotifier {
       'settings': 'Settings',
       'language': 'Language',
       'help_support': 'Help & Support',
+      'stockInventory': 'Stock Inventory',
     },
     'ml': {
       'dashboard': 'ഡാഷ്ബോർഡ്',
@@ -51,6 +52,7 @@ class LocalizationProvider with ChangeNotifier {
       'settings': 'ക്രമീകരണങ്ങൾ',
       'language': 'ഭാഷ',
       'help_support': 'സഹായവും പിന്തുണയും',
+      'stockInventory': 'സ്റ്റോക്ക് ഇൻവെന്ററി',
     },
     'hi': {
       'dashboard': 'डैशबोर्ड',
@@ -70,6 +72,7 @@ class LocalizationProvider with ChangeNotifier {
       'settings': 'सेटिंग्स',
       'language': 'भाषा',
       'help_support': 'सहायता और समर्थन',
+      'stockInventory': 'स्टॉक इन्वेंटरी',
     },
     'ta': {
       'dashboard': 'டாஷ்போர்டு',
@@ -89,6 +92,7 @@ class LocalizationProvider with ChangeNotifier {
       'settings': 'அமைப்புகள்',
       'language': 'மொழி',
       'help_support': 'உதவி மற்றும் ஆதரவு',
+      'stockInventory': 'இருப்பு இருப்பு',
     },
     'kn': {
       'dashboard': 'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್',
@@ -108,6 +112,7 @@ class LocalizationProvider with ChangeNotifier {
       'settings': 'ಸೆಟ್ಟಿಂಗ್‌ಗಳು',
       'language': 'ಭಾಷೆ',
       'help_support': 'ಸಹಾಯ ಮತ್ತು ಬೆಂಬಲ',
+      'stockInventory': 'ಸ್ಟಾಕ್ ಇನ್ವೆಂಟರಿ',
     },
   };
 

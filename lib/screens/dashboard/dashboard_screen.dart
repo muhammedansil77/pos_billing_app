@@ -10,7 +10,20 @@ class DashboardScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(localizationProvider.translate('dashboard')),
+        title: Text(localizationProvider.translate('dashboard'), style: const TextStyle(fontWeight: FontWeight.bold)),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: GestureDetector(
+              onTap: () => Navigator.pushNamed(context, '/profile'),
+              child: const CircleAvatar(
+                backgroundColor: Colors.deepPurple,
+                radius: 18,
+                child: Icon(Icons.person, color: Colors.white, size: 20),
+              ),
+            ),
+          ),
+        ],
       ),
       body: GridView.count(
         crossAxisCount: 2,
@@ -23,6 +36,8 @@ class DashboardScreen extends StatelessWidget {
           _buildDashboardCard(context, localizationProvider.translate('customers'), Icons.people, Colors.blue, '/customers'),
           _buildDashboardCard(context, 'Credit Management', Icons.credit_card, Colors.red, '/credit'),
           _buildDashboardCard(context, localizationProvider.translate('salesHistory'), Icons.history, Colors.purple, '/sales'),
+          _buildDashboardCard(context, 'Categories', Icons.category, Colors.indigo, '/categories'),
+          _buildDashboardCard(context, 'Stock Inventory', Icons.inventory_2_outlined, Colors.brown, '/inventory'),
         ],
       ),
     );
@@ -40,8 +55,15 @@ class DashboardScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 48, color: color),
-            const SizedBox(height: 16),
-            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+              child: Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
           ],
         ),
       ),
