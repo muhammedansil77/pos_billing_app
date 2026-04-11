@@ -29,18 +29,23 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   Widget build(BuildContext context) {
     final localization = Provider.of<LocalizationProvider>(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text(localization.translate('stockInventory')),
+        title: Text(
+          localization.translate('stockInventory'),
+          style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.5),
+        ),
         actions: [
           IconButton(
-            icon: Icon(_sortBySales ? Icons.star : Icons.star_border),
+            icon: Icon(_sortBySales ? Icons.auto_graph_rounded : Icons.trending_up_rounded, color: _sortBySales ? colorScheme.primary : null),
             tooltip: 'Sort by Best Seller',
             onPressed: () => setState(() => _sortBySales = !_sortBySales),
           ),
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded),
             onPressed: () => context.read<ProductProvider>().fetchProducts(),
           ),
         ],
@@ -56,7 +61,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
             final matchesSearch = name.contains(_searchQuery.toLowerCase());
             final isLowStock = (product['quantity'] ?? 0) < 5;
             
-            // Category filter logic
             final productCatId = product['category'] is Map 
                 ? product['category']['_id'] 
                 : product['category'];
@@ -65,7 +69,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
             return matchesSearch && (!_showLowStockOnly || isLowStock) && matchesCategory;
           }).toList();
 
-          // Calculate dynamic high-seller status for the current list
           double maxSales = 0;
           if (products.isNotEmpty) {
             maxSales = products
@@ -79,165 +82,156 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
           return Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Search stock...',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    filled: true,
-                    fillColor: Colors.grey[50],
-                  ),
-                  onChanged: (v) => setState(() => _searchQuery = v),
-                ),
-              ),
-              
-              // Category Filter Button (Searchable Bottom Sheet)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: InkWell(
-                  onTap: () => _showCategorySelector(context, categoryProvider),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[300]!),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.category_outlined, color: Colors.deepPurple[400]),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            _selectedCategoryId == null 
-                                ? 'All Categories' 
-                                : categoryProvider.categories.firstWhere((c) => c['_id'] == _selectedCategoryId)['name'],
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        if (_selectedCategoryId != null)
-                          IconButton(
-                            icon: const Icon(Icons.clear, size: 18),
-                            onPressed: () => setState(() => _selectedCategoryId = null),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                          ),
-                        const Icon(Icons.arrow_drop_down),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                child: Row(
+              Container(
+                color: colorScheme.surface,
+                padding: const EdgeInsets.all(20),
+                child: Column(
                   children: [
-                     FilterChip(
-                      label: const Text('All Products'),
-                      selected: !_showLowStockOnly,
-                      onSelected: (selected) => setState(() => _showLowStockOnly = false),
-                      selectedColor: Colors.deepPurple[100],
+                    TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Search stock...',
+                        prefixIcon: Icon(Icons.search_rounded, color: colorScheme.primary.withOpacity(0.7)),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade200)),
+                        filled: true,
+                        fillColor: Theme.of(context).scaffoldBackgroundColor,
+                      ),
+                      onChanged: (v) => setState(() => _searchQuery = v),
                     ),
-                    const SizedBox(width: 8),
-                    FilterChip(
-                      label: const Text('Low Stock'),
-                      selected: _showLowStockOnly,
-                      onSelected: (selected) => setState(() => _showLowStockOnly = true),
-                      selectedColor: Colors.red[100],
-                      labelStyle: TextStyle(color: _showLowStockOnly ? Colors.red[900] : Colors.black87),
+                    const SizedBox(height: 12),
+                    InkWell(
+                      onTap: () => _showCategorySelector(context, categoryProvider),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).scaffoldBackgroundColor,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.category_rounded, color: colorScheme.primary, size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                _selectedCategoryId == null 
+                                    ? 'All Categories' 
+                                    : categoryProvider.categories.firstWhere((c) => c['_id'] == _selectedCategoryId)['name'],
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                            ),
+                            if (_selectedCategoryId != null)
+                              IconButton(
+                                icon: const Icon(Icons.close_rounded, size: 18),
+                                onPressed: () => setState(() => _selectedCategoryId = null),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              ),
+                            const Icon(Icons.keyboard_arrow_down_rounded),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        _inventoryFilterChip('All Products', !_showLowStockOnly, () => setState(() => _showLowStockOnly = false)),
+                        const SizedBox(width: 12),
+                        _inventoryFilterChip('Low Stock', _showLowStockOnly, () => setState(() => _showLowStockOnly = true), isAlert: true),
+                      ],
                     ),
                   ],
                 ),
               ),
+              
               Expanded(
                 child: products.isEmpty
-                    ? const Center(child: Text('No matching stock found.'))
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.inventory_2_rounded, size: 64, color: colorScheme.primary.withOpacity(0.1)),
+                            const SizedBox(height: 16),
+                            const Text('No matching stock found.', style: TextStyle(color: Colors.grey)),
+                          ],
+                        ),
+                      )
                     : ListView.builder(
                         itemCount: products.length,
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                         itemBuilder: (context, index) {
                           final product = products[index];
                           final quantity = (product['quantity'] ?? 0).toDouble();
                           final unit = product['unit'] ?? 'Units';
                           final salesCount = (product['salesCount'] ?? 0).toDouble();
                           final isLow = quantity < 5;
-                          // Dynamic best seller: item with most sales in this category
                           final isBestSellerInCurrentView = salesCount > 0 && salesCount == maxSales;
-                          
-                          final categoryName = product['category'] is Map 
-                              ? product['category']['name'] 
-                              : 'Uncategorized';
+                          final categoryName = product['category'] is Map ? product['category']['name'] : 'Uncategorized';
 
                           return Card(
-                            elevation: 0,
                             margin: const EdgeInsets.only(bottom: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: isLow ? Colors.red[200]! : Colors.grey[200]!),
-                            ),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                              leading: CircleAvatar(
-                                backgroundColor: isLow ? Colors.red[50] : (isBestSellerInCurrentView ? Colors.amber[50] : Colors.deepPurple[50]),
-                                child: Icon(
-                                  isBestSellerInCurrentView ? Icons.whatshot : Icons.inventory_2_outlined,
-                                  color: isLow ? Colors.red : (isBestSellerInCurrentView ? Colors.orange[700] : Colors.deepPurple),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                                leading: Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: isLow ? const Color(0xFFEF4444).withOpacity(0.1) : (isBestSellerInCurrentView ? const Color(0xFFF59E0B).withOpacity(0.1) : colorScheme.primary.withOpacity(0.1)),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    isBestSellerInCurrentView ? Icons.workspace_premium_rounded : Icons.inventory_2_rounded,
+                                    color: isLow ? const Color(0xFFEF4444) : (isBestSellerInCurrentView ? const Color(0xFFD97706) : colorScheme.primary),
+                                    size: 24,
+                                  ),
                                 ),
-                              ),
-                              title: Text(
-                                product['name'],
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                              ),
-                              subtitle: RichText(
-                                text: TextSpan(
+                                title: Text(
+                                  product['name'],
+                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    TextSpan(
-                                      text: '$categoryName ',
-                                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      categoryName,
+                                      style: TextStyle(color: colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
                                     ),
-                                    if (isBestSellerInCurrentView)
-                                      const TextSpan(
-                                        text: '🔥 BEST SELLER IN THIS CATEGORY\n',
-                                        style: TextStyle(color: Colors.orange, fontSize: 11, fontWeight: FontWeight.bold),
-                                      )
-                                    else if (salesCount > 0)
-                                      TextSpan(
-                                        text: '($salesCount Sold)\n',
-                                        style: const TextStyle(color: Colors.blueGrey, fontSize: 11),
-                                      )
-                                    else
-                                      const TextSpan(text: '\n'),
-                                    TextSpan(
-                                      text: isLow ? 'LOW STOCK ALERT' : 'Available in stock',
-                                      style: TextStyle(
-                                        color: isLow ? Colors.red : Colors.green[700], 
-                                        fontSize: 11, 
-                                        fontWeight: FontWeight.bold
-                                      ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        _statusTag(
+                                          isLow ? 'LOW STOCK' : 'AVAILABLE', 
+                                          isLow ? const Color(0xFFEF4444) : const Color(0xFF10B981)
+                                        ),
+                                        if (isBestSellerInCurrentView) ...[
+                                          const SizedBox(width: 6),
+                                          _statusTag('BEST SELLER', const Color(0xFFF59E0B)),
+                                        ],
+                                      ],
                                     ),
                                   ],
                                 ),
-                              ),
-                              trailing: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    quantity.toStringAsFixed(unit == 'Units' ? 0 : 3),
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: isLow ? Colors.red : Colors.black87,
+                                trailing: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      quantity.toStringAsFixed(unit == 'Units' ? 0 : 3),
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w900,
+                                        color: isLow ? const Color(0xFFEF4444) : colorScheme.onSurface,
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    unit,
-                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                  ),
-                                ],
+                                    Text(
+                                      unit,
+                                      style: TextStyle(fontSize: 11, color: colorScheme.onSurface.withOpacity(0.4), fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           );
@@ -251,11 +245,55 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 
+  Widget _inventoryFilterChip(String label, bool isSelected, VoidCallback onSelected, {bool isAlert = false}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final activeColor = isAlert ? const Color(0xFFEF4444) : colorScheme.primary;
+
+    return Expanded(
+      child: InkWell(
+        onTap: onSelected,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? activeColor : Colors.transparent,
+            border: Border.all(color: isSelected ? Colors.transparent : Colors.grey.shade200),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: isSelected ? Colors.white : colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _statusTag(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+      ),
+    );
+  }
+
   void _showCategorySelector(BuildContext context, CategoryProvider provider) {
+    final colorScheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      backgroundColor: Colors.transparent,
       builder: (context) {
         String sheetSearch = '';
         return StatefulBuilder(
@@ -264,30 +302,40 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 c['name'].toString().toLowerCase().contains(sheetSearch.toLowerCase())).toList();
 
             return Container(
-              padding: const EdgeInsets.all(20),
-              height: MediaQuery.of(context).size.height * 0.7,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+              ),
+              height: MediaQuery.of(context).size.height * 0.75,
               child: Column(
                 children: [
-                  const Text('Select Category', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 16),
+                  const Text('Select Category', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 20),
                   TextField(
                     decoration: InputDecoration(
                       hintText: 'Search Category...',
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      filled: true,
+                      fillColor: Theme.of(context).scaffoldBackgroundColor,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade200)),
                     ),
                     onChanged: (v) => setSheetState(() => sheetSearch = v),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
+                  const Divider(),
                   Expanded(
                     child: ListView.builder(
                       itemCount: filtered.length,
+                      padding: const EdgeInsets.only(top: 8),
                       itemBuilder: (context, index) {
                         final cat = filtered[index];
+                        final isSelected = _selectedCategoryId == cat['_id'];
                         return ListTile(
-                          leading: const Icon(Icons.folder_open),
-                          title: Text(cat['name']),
-                          selected: _selectedCategoryId == cat['_id'],
+                          leading: Icon(Icons.folder_rounded, color: isSelected ? colorScheme.primary : Colors.grey.shade400),
+                          title: Text(cat['name'], style: TextStyle(fontWeight: isSelected ? FontWeight.w900 : FontWeight.bold)),
+                          trailing: isSelected ? Icon(Icons.check_circle_rounded, color: colorScheme.primary) : null,
                           onTap: () {
                             setState(() => _selectedCategoryId = cat['_id']);
                             Navigator.pop(context);

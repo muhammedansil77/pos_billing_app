@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const String baseUrl = "http://172.20.10.2:5000";
+const String baseUrl = "http://10.0.2.2:5001/";
 
 class ApiService {
   final Dio _dio = Dio(

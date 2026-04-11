@@ -92,10 +92,13 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(localizationProvider.translate('products')),
+        title: Text(
+          localizationProvider.translate('products'),
+          style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.5),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh), 
+            icon: const Icon(Icons.refresh_rounded), 
             onPressed: () => context.read<ProductProvider>().fetchProducts()
           )
         ],
@@ -107,10 +110,20 @@ class _ProductListScreenState extends State<ProductListScreen> {
           }
 
           if (productProvider.products.isEmpty) {
-            return const Center(child: Text('No products available. Add one!'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.inventory_2_outlined, size: 64, color: Theme.of(context).colorScheme.primary.withOpacity(0.2)),
+                  const SizedBox(height: 16),
+                  const Text('No products available. Add one!', style: TextStyle(color: Colors.grey)),
+                ],
+              ),
+            );
           }
 
           return ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 12),
             itemCount: productProvider.products.length,
             itemBuilder: (context, index) {
               final product = productProvider.products[index];
@@ -122,37 +135,71 @@ class _ProductListScreenState extends State<ProductListScreen> {
                   : (product['category'] ?? 'Uncategorized');
 
               return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: ListTile(
-                  leading: CircleAvatar(child: Text(product['name'][0].toUpperCase())),
-                  title: Text(product['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(
-                    'Category: $categoryName\n'
-                    'Sell: ₹$sellingPrice | Wholesale: ₹$wholesalePrice\n'
-                    'Stock: ${product['quantity']} $unit | BC: ${product['barcode']}',
-                  ),
-                  isThreeLine: true,
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () async {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => AddEditProductScreen(product: product)),
-                          );
-                        },
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      child: Text(
+                        product['name'][0].toUpperCase(), 
+                        style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.print, color: Colors.green),
-                        onPressed: () => _printBarcode(product),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _deleteProduct(context, product['_id']),
-                      ),
-                    ],
+                    ),
+                    title: Text(
+                      product['name'], 
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                categoryName, 
+                                style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text('Stock: ${product['quantity']} $unit', style: const TextStyle(fontSize: 11)),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Sell: ₹$sellingPrice | Wholesale: ₹$wholesalePrice',
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 12),
+                        ),
+                      ],
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.edit_rounded, color: Theme.of(context).colorScheme.primary.withOpacity(0.7), size: 20),
+                          onPressed: () async {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => AddEditProductScreen(product: product)),
+                            );
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.print_rounded, color: Color(0xFF10B981), size: 20),
+                          onPressed: () => _printBarcode(product),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 20),
+                          onPressed: () => _deleteProduct(context, product['_id']),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -163,7 +210,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
       floatingActionButton: FloatingActionButton(
         heroTag: 'addProduct',
         onPressed: () => Navigator.pushNamed(context, '/add-product'),
-        child: const Icon(Icons.add),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
+        child: const Icon(Icons.add_rounded),
       ),
     );
   }

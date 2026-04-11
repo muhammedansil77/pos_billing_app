@@ -59,43 +59,101 @@ class _AddEditCustomerScreenState extends State<AddEditCustomerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      appBar: AppBar(title: Text(_isEditing ? 'Edit Customer' : 'Add Customer')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text(
+          _isEditing ? 'Edit Customer' : 'Add Customer',
+          style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.5),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text(
+                'Customer Details',
+                style: TextStyle(
+                  fontSize: 18, 
+                  fontWeight: FontWeight.bold, 
+                  color: colorScheme.onSurface.withOpacity(0.8),
+                ),
+              ),
+              const SizedBox(height: 24),
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Name', border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                  labelText: 'Full Name',
+                  prefixIcon: Icon(Icons.person_rounded, color: colorScheme.primary.withOpacity(0.7)),
+                  filled: true,
+                  fillColor: colorScheme.surface,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                ),
                 validator: (v) => v!.isEmpty ? 'Required' : null,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               TextFormField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(labelText: 'Phone Number', border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                  labelText: 'Phone Number',
+                  prefixIcon: Icon(Icons.phone_rounded, color: colorScheme.primary.withOpacity(0.7)),
+                  filled: true,
+                  fillColor: colorScheme.surface,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                ),
                 validator: (v) => v!.isEmpty ? 'Required' : null,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               TextFormField(
                 controller: _addressController,
-                decoration: const InputDecoration(labelText: 'Place / Address', border: OutlineInputBorder()),
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Place / Address',
+                  alignLabelWithHint: true,
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.only(bottom: 48.0),
+                    child: Icon(Icons.location_on_rounded, color: colorScheme.primary.withOpacity(0.7)),
+                  ),
+                  filled: true,
+                  fillColor: colorScheme.surface,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                ),
                 validator: (v) => v!.isEmpty ? 'Required' : null,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 48),
               SizedBox(
                 width: double.infinity,
+                height: 56,
                 child: ElevatedButton(
                   onPressed: _saveCustomer,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF16A34A),
+                    backgroundColor: colorScheme.primary,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
                   ),
-                  child: Text(_isEditing ? 'UPDATE CUSTOMER' : 'SAVE CUSTOMER'),
+                  child: Text(
+                    _isEditing ? 'UPDATE CUSTOMER' : 'SAVE CUSTOMER',
+                    style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
+                  ),
                 ),
               ),
             ],

@@ -276,60 +276,109 @@ class _POSScreenState extends State<POSScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.shopping_cart_outlined, size: 64, color: Colors.grey),
+                            Icon(Icons.shopping_basket_outlined, size: 84, color: Colors.grey.withOpacity(0.3)),
                             const SizedBox(height: 16),
                             Text(
                               localizationProvider.translate('noItemsAlert'),
-                              style: const TextStyle(fontSize: 16, color: Colors.grey),
+                              style: TextStyle(fontSize: 18, color: Colors.grey.shade400, fontWeight: FontWeight.w500),
                             ),
                           ],
                         ),
                       )
                     : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         itemCount: billing.billingItems.length,
                         itemBuilder: (context, index) {
                           final item = billing.billingItems[index];
-                          return Card(
-                            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: Colors.grey[200]!),
+                          final sellingPrice = (item['sellingPrice'] ?? item['price'] ?? 0.0);
+                          final billQty = item['billQuantity'] ?? 0.0;
+                          final itemTotal = sellingPrice * billQty;
+                          final isUnit = item['unit'] == 'Units';
+                          final isLowStock = (item['quantity'] ?? 0) < 5;
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: isLowStock ? Colors.red.shade100 : Colors.grey.shade200),
+                              boxShadow: [
+                                BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2)),
+                              ],
                             ),
-                            child: ListTile(
-                              leading: const CircleAvatar(child: Icon(Icons.shopping_bag)),
-                              title: Text(item['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
                                 children: [
-                                  Text(
-                                    '₹${item['sellingPrice'] ?? item['price']} x ${item['billQuantity']} ${item['unit'] ?? ''}',
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              item['name'],
+                                              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              '₹${sellingPrice.toStringAsFixed(2)} / ${item['unit'] ?? ''}',
+                                              style: TextStyle(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.w600),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        '₹${itemTotal.toStringAsFixed(2)}',
+                                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Theme.of(context).primaryColor),
+                                      ),
+                                    ],
                                   ),
-                                  Text(
-                                    'Stock: ${item['quantity'] ?? 0} ${item['unit'] ?? ''}',
-                                    style: TextStyle(
-                                      color: (item['quantity'] ?? 0) < 5 ? Colors.red : Colors.grey,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.remove_circle_outline, color: Colors.orange),
-                                    onPressed: () => billing.updateQuantity(index, -1),
-                                  ),
-                                  Text(
-                                    item['billQuantity'] is double 
-                                      ? (item['billQuantity'] as double).toStringAsFixed(item['unit'] == 'Units' ? 0 : 3)
-                                      : '${item['billQuantity']}',
-                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.add_circle_outline, color: Colors.blue),
-                                    onPressed: () => billing.updateQuantity(index, 1),
+                                  const SizedBox(height: 16),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Text('CURRENT STOCK', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.grey, letterSpacing: 0.5)),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            '${item['quantity'] ?? 0} ${item['unit'] ?? ''}',
+                                            style: TextStyle(
+                                              color: isLowStock ? Colors.red : Colors.grey.shade700,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade50,
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: Colors.grey.shade100),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            _qtyBtn(Icons.remove, () => billing.updateQuantity(index, -1), isDangerous: true),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                                              child: Text(
+                                                billQty is double ? billQty.toStringAsFixed(isUnit ? 0 : 2) : '$billQty',
+                                                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+                                              ),
+                                            ),
+                                            _qtyBtn(Icons.add, () => billing.updateQuantity(index, 1)),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -346,98 +395,82 @@ class _POSScreenState extends State<POSScreen> {
     );
   }
 
+  Widget _qtyBtn(IconData icon, VoidCallback onTap, {bool isDangerous = false}) {
+    return Material(
+      color: isDangerous ? Colors.orange.shade50 : Theme.of(context).primaryColor.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          child: Icon(icon, size: 20, color: isDangerous ? Colors.orange.shade700 : Theme.of(context).primaryColor),
+        ),
+      ),
+    );
+  }
+
   Widget _bottomSummary(BillingProvider billing) {
     final discountController = TextEditingController(text: billing.discount.toString());
     
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withAlpha(20), blurRadius: 10, spreadRadius: 5)
+          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, -5))
         ],
       ),
       child: Column(
         children: [
-          _summaryRow('Subtotal:', '₹${billing.subtotal.toStringAsFixed(2)}'),
-          const SizedBox(height: 8),
-          _summaryRow('Total GST:', '₹${billing.totalGst.toStringAsFixed(2)}'),
-          const SizedBox(height: 8),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Payment Mode:', style: TextStyle(fontSize: 16)),
-              SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(value: 'Cash', label: Text('Cash'), icon: Icon(Icons.money)),
-                  ButtonSegment(value: 'Credit', label: Text('Credit'), icon: Icon(Icons.credit_card)),
-                ],
-                selected: {billing.paymentMode},
-                onSelectionChanged: (Set<String> newSelection) {
-                  billing.setPaymentMode(newSelection.first);
-                },
-                style: SegmentedButton.styleFrom(
-                  selectedBackgroundColor: const Color(0xFF16A34A),
-                  selectedForegroundColor: Colors.white,
-                  visualDensity: VisualDensity.compact,
-                ),
-              ),
+              Expanded(child: _summaryBlock('Subtotal', '₹${billing.subtotal.toStringAsFixed(2)}')),
+              const SizedBox(width: 12),
+              Expanded(child: _summaryBlock('Total GST', '₹${billing.totalGst.toStringAsFixed(2)}')),
             ],
           ),
-          if (billing.paymentMode == 'Credit' && billing.selectedCustomer != null) ...[
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Customer:', style: TextStyle(fontSize: 14, color: Colors.grey)),
-                Text(
-                  billing.selectedCustomer!['name'],
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-              ],
+          const SizedBox(height: 16),
+          _summaryActionTile('Discount', 
+            SizedBox(
+              width: 80,
+              child: TextField(
+                controller: discountController,
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.right,
+                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w900),
+                decoration: const InputDecoration(prefixText: '₹', border: InputBorder.none, isDense: true),
+                onSubmitted: (v) => billing.setDiscount(double.tryParse(v) ?? 0.0),
+              ),
             ),
-          ],
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Discount:', style: TextStyle(fontSize: 16, color: Colors.red)),
-              SizedBox(
-                width: 100,
-                height: 35,
-                child: TextField(
-                  controller: discountController,
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                  decoration: const InputDecoration(
-                    prefixText: '₹ ',
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                    border: InputBorder.none,
-                  ),
-                  onSubmitted: (v) {
-                    billing.setDiscount(double.tryParse(v) ?? 0.0);
-                  },
-                ),
-              ),
-            ],
           ),
-          const Divider(height: 24),
+          const SizedBox(height: 12),
+          _summaryActionTile('Payment', 
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _paymentChip('Cash', billing.paymentMode == 'Cash', () => billing.setPaymentMode('Cash')),
+                const SizedBox(width: 8),
+                _paymentChip('Credit', billing.paymentMode == 'Credit', () => billing.setPaymentMode('Credit')),
+              ],
+            )
+          ),
+          const Divider(height: 32),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Grand Total:', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const Text('Grand Total', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
               Text(
                 '₹${billing.grandTotal.toStringAsFixed(2)}',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Theme.of(context).primaryColor),
               ),
             ],
           ),
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
+            height: 56,
             child: ElevatedButton(
               onPressed: billing.billingItems.isEmpty ? null : () async {
                 try {
@@ -456,18 +489,77 @@ class _POSScreenState extends State<POSScreen> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
                 backgroundColor: const Color(0xFF16A34A),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 0,
               ),
               child: Text(
-                billing.editingBillId != null ? 'UPDATE BILL' : 'CHECKOUT', 
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
+                billing.editingBillId != null ? 'UPDATE BILL' : 'COMPLETE CHECKOUT', 
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 0.5)
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _summaryBlock(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey)),
+          const SizedBox(height: 4),
+          Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+        ],
+      ),
+    );
+  }
+
+  Widget _summaryActionTile(String label, Widget action) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.grey.shade700)),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: action,
+        ),
+      ],
+    );
+  }
+
+  Widget _paymentChip(String label, bool isSelected, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? Theme.of(context).primaryColor : Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade300),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+            color: isSelected ? Colors.white : Colors.grey.shade600,
+          ),
+        ),
       ),
     );
   }

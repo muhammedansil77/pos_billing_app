@@ -122,13 +122,62 @@ class POSBillingApp extends StatelessWidget {
       title: 'POS Billing App',
       theme: ThemeData(
         useMaterial3: true,
-        primarySwatch: Colors.deepPurple,
-        brightness: Brightness.light,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF6366F1), // Modern Indigo
+          primary: const Color(0xFF6366F1),
+          surface: Colors.white,
+          background: const Color(0xFFF8FAFC), // Subtle slate background
+        ),
+        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          backgroundColor: Colors.white,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          titleTextStyle: TextStyle(
+            color: Color(0xFF1E293B),
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+          iconTheme: IconThemeData(color: Color(0xFF1E293B)),
+        ),
+        cardTheme: CardThemeData(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.grey.shade200, width: 1),
+          ),
+          color: Colors.white,
+        ),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
-        primarySwatch: Colors.deepPurple,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF818CF8), // Lighter indigo for dark mode
+          brightness: Brightness.dark,
+          surface: const Color(0xFF0F172A),
+          background: const Color(0xFF020617),
+        ),
+        scaffoldBackgroundColor: const Color(0xFF020617),
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          backgroundColor: Color(0xFF0F172A),
+          elevation: 0,
+          titleTextStyle: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        cardTheme: CardThemeData(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.white.withOpacity(0.05), width: 1),
+          ),
+          color: const Color(0xFF0F172A),
+        ),
       ),
       themeMode: ThemeMode.system,
       initialRoute: '/login',
