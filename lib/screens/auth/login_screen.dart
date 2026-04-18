@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/snackbar_utils.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,6 +23,21 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordController.text.trim(),
       );
       if (mounted) {
+        Navigator.pushReplacementNamed(context, '/dashboard');
+      }
+    } catch (e) {
+      if (mounted) {
+        final errorMessage = e.toString().replaceFirst('Exception: ', '');
+        SnackbarUtils.showError(context, errorMessage);
+      }
+    }
+  }
+
+  void _handleGoogleLogin() async {
+    final authProvider = context.read<AuthProvider>();
+    try {
+      await authProvider.googleLogin();
+      if (mounted && authProvider.isAuthenticated) {
         Navigator.pushReplacementNamed(context, '/dashboard');
       }
     } catch (e) {
@@ -154,6 +170,98 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       );
                     },
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text('OR', style: TextStyle(color: colorScheme.onBackground.withOpacity(0.5))),
+                      ),
+                      const Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Consumer<AuthProvider>(
+                    builder: (context, auth, child) {
+                      return SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: OutlinedButton(
+                          onPressed: auth.isLoading ? null : _handleGoogleLogin,
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black87,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            side: BorderSide(color: Colors.grey.shade300, width: 1),
+                            elevation: 0,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 24,
+                                height: 24,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white,
+                                ),
+                                child: Center(
+                                  child: Image.network(
+                                    'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png',
+                                    height: 20,
+                                    errorBuilder: (context, error, stackTrace) => const Text(
+                                      'G',
+                                      style: TextStyle(
+                                        color: Colors.blue,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              const Text(
+                                'Continue with Google',
+                                style: TextStyle(
+                                  fontSize: 16, 
+                                  fontWeight: FontWeight.w600, 
+                                  letterSpacing: 0.5,
+                                  color: Colors.black87
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Don't have an account?",
+                        style: TextStyle(color: colorScheme.onBackground.withOpacity(0.7)),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                          );
+                        },
+                        child: Text(
+                          'Register',
+                          style: TextStyle(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

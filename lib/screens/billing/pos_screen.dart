@@ -191,20 +191,6 @@ class _POSScreenState extends State<POSScreen> {
     final localizationProvider = Provider.of<LocalizationProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(localizationProvider.translate('newBill')),
-        actions: [
-          IconButton(
-            icon: Icon(_showCamera ? Icons.videocam_off_outlined : Icons.videocam_outlined),
-            tooltip: _showCamera ? 'Hide Scanner' : 'Show Scanner',
-            onPressed: () => setState(() => _showCamera = !_showCamera),
-          ),
-          IconButton(
-            icon: const Icon(Icons.qr_code_scanner),
-            onPressed: _scanProduct,
-          ),
-        ],
-      ),
       body: Consumer<BillingProvider>(
         builder: (context, billing, child) {
           if (billing.isLoading) {
@@ -414,7 +400,7 @@ class _POSScreenState extends State<POSScreen> {
     final discountController = TextEditingController(text: billing.discount.toString());
     
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
@@ -424,14 +410,7 @@ class _POSScreenState extends State<POSScreen> {
       ),
       child: Column(
         children: [
-          Row(
-            children: [
-              Expanded(child: _summaryBlock('Subtotal', '₹${billing.subtotal.toStringAsFixed(2)}')),
-              const SizedBox(width: 12),
-              Expanded(child: _summaryBlock('Total GST', '₹${billing.totalGst.toStringAsFixed(2)}')),
-            ],
-          ),
-          const SizedBox(height: 16),
+
           _summaryActionTile('Discount', 
             SizedBox(
               width: 80,
@@ -445,7 +424,7 @@ class _POSScreenState extends State<POSScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           _summaryActionTile('Payment', 
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -456,7 +435,7 @@ class _POSScreenState extends State<POSScreen> {
               ],
             )
           ),
-          const Divider(height: 32),
+          const Divider(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -467,10 +446,10 @@ class _POSScreenState extends State<POSScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
-            height: 56,
+            height: 48,
             child: ElevatedButton(
               onPressed: billing.billingItems.isEmpty ? null : () async {
                 try {
@@ -507,7 +486,7 @@ class _POSScreenState extends State<POSScreen> {
 
   Widget _summaryBlock(String label, String value) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),

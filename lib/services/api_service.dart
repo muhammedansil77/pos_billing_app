@@ -1,8 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-const String baseUrl = "http://10.0.2.2:5001/";
-
+const String baseUrl = "http://127.0.0.1:5000"; // Using localhost forwarded via ADB reverse
 class ApiService {
   final Dio _dio = Dio(
     BaseOptions(
@@ -20,7 +18,7 @@ class ApiService {
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await _dio.post(
-        'auth/login', // Use relative path
+        'auth/login',
         data: {'email': email, 'password': password},
       );
       SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -31,6 +29,42 @@ class ApiService {
       print('LOGIN ERROR Message: ${e.message}');
       print('LOGIN ERROR Data: ${e.response?.data}');
       throw Exception(e.response?.data?['message'] ?? 'Failed to connect to server. Check your network.');
+    }
+  }
+
+  Future<Map<String, dynamic>> googleLogin(String idToken) async {
+    try {
+      final response = await _dio.post(
+        'auth/google-login',
+        data: {'idToken': idToken},
+      );
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', response.data['token']);
+      return response.data;
+    } on DioException catch (e) {
+      throw Exception(e.response?.data?['message'] ?? 'Google login failed.');
+    }
+  }
+
+  Future<void> sendOtp(String email) async {
+    try {
+      await _dio.post('auth/send-otp', data: {'email': email});
+    } on DioException catch (e) {
+      throw Exception(e.response?.data?['message'] ?? 'Failed to send OTP.');
+    }
+  }
+
+  Future<Map<String, dynamic>> register(String name, String email, String password, String otp) async {
+    try {
+      final response = await _dio.post(
+        'auth/register',
+        data: {'name': name, 'email': email, 'password': password, 'otp': otp},
+      );
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', response.data['token']);
+      return response.data;
+    } on DioException catch (e) {
+      throw Exception(e.response?.data?['message'] ?? 'Failed to register.');
     }
   }
 
