@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-const String baseUrl = "http://127.0.0.1:5000"; // Using localhost forwarded via ADB reverse
+const String baseUrl = "http://54.252.184.136:5000"; // AWS EC2 Public IP
 class ApiService {
   final Dio _dio = Dio(
     BaseOptions(
